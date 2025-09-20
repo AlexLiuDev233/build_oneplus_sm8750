@@ -235,6 +235,7 @@ jobs:
         run: |
           cd kernel_workspace/kernel_platform/common
           curl -LSs "https://raw.githubusercontent.com/vc-teahouse/Baseband-guard/refs/heads/main/setup.sh" -o setup.sh && bash setup.sh
+          echo "CONFIG_LSM=landlock,lockdown,yama,loadpin,safesetid,selinux,smack,tomoyo,apparmor,bpf,baseband_guard" >> ./arch/arm64/configs/gki_defconfig
       - name: 🔧 Set up SUSFS (配置 SUSFS)
         run: |
            cd kernel_workspace
@@ -314,6 +315,20 @@ jobs:
           echo "HMBird补丁应用完成"
 
           
+      - name: 🔧 Set gki_defconfig (设置编译配置)
+        env:
+          ENABLE_B: ${{ github.event.inputs.enable_feature_b }}       
+        run: |
+          cd kernel_workspace/kernel_platform
+          cp "${GITHUB_WORKSPACE}/.github/workflows/Bin/main.bin" ./
+          chmod +x main.bin
+          ./main.bin "setup_gki_config" "$ENABLE_B"
+          rm -rf ./main.bin
+          #Remove check_defconfig
+          sudo sed -i 's/check_defconfig//' ./common/build.config.gki
+          cd common
+          git add -A && git commit -a -m "BUILD Kernel"
+
       - name: 🔧 Set gki_defconfig (设置编译配置)
         env:
           ENABLE_B: ${{ github.event.inputs.enable_feature_b }}       
